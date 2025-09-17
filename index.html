@@ -458,17 +458,49 @@
                 </div>
                 
                 <div class="wind-results" id="windResults" style="display: none;">
+                    <div style="grid-column: 1 / -1; text-align: center; margin-bottom: 15px;">
+                        <h4 style="margin: 0; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 5px;">
+                            🧭 Composantes pour la Route Magnétique
+                        </h4>
+                    </div>
+                    
                     <div class="wind-result-card">
-                        <div class="wind-result-value" id="headwindValue">-- kt</div>
-                        <div class="wind-result-label" id="headwindLabel">Vent de face</div>
+                        <div class="wind-result-value" id="headwindRouteValue">-- kt</div>
+                        <div class="wind-result-label" id="headwindRouteLabel">Vent de face</div>
                     </div>
                     <div class="wind-result-card">
-                        <div class="wind-result-value" id="crosswindValue">-- kt</div>
+                        <div class="wind-result-value" id="crosswindRouteValue">-- kt</div>
                         <div class="wind-result-label">Vent de travers</div>
                     </div>
                     <div class="wind-result-card">
-                        <div class="wind-result-value" id="windStrength">-- kt</div>
-                        <div class="wind-result-label">Force du vent</div>
+                        <div class="wind-result-value" id="routeUsed">--°</div>
+                        <div class="wind-result-label">Route utilisée</div>
+                    </div>
+                    
+                    <div style="grid-column: 1 / -1; text-align: center; margin: 20px 0 15px 0;">
+                        <h4 style="margin: 0; color: #2c3e50; border-bottom: 2px solid #27ae60; padding-bottom: 5px;">
+                            🛫 Composantes pour le Cap Piste
+                        </h4>
+                    </div>
+                    
+                    <div class="wind-result-card" style="border-color: rgba(39, 174, 96, 0.3); background: rgba(39, 174, 96, 0.1);">
+                        <div class="wind-result-value" id="headwindPisteValue">-- kt</div>
+                        <div class="wind-result-label" id="headwindPisteLabel">Vent de face</div>
+                    </div>
+                    <div class="wind-result-card" style="border-color: rgba(39, 174, 96, 0.3); background: rgba(39, 174, 96, 0.1);">
+                        <div class="wind-result-value" id="crosswindPisteValue">-- kt</div>
+                        <div class="wind-result-label">Vent de travers</div>
+                    </div>
+                    <div class="wind-result-card" style="border-color: rgba(39, 174, 96, 0.3); background: rgba(39, 174, 96, 0.1);">
+                        <div class="wind-result-value" id="pisteUsed">--°</div>
+                        <div class="wind-result-label">Cap piste</div>
+                    </div>
+                    
+                    <div style="grid-column: 1 / -1; text-align: center; margin-top: 15px;">
+                        <div class="wind-result-card" style="background: rgba(52, 152, 219, 0.1); border-color: rgba(52, 152, 219, 0.3);">
+                            <div class="wind-result-value" id="windStrength">-- kt</div>
+                            <div class="wind-result-label">Force du vent total</div>
+                        </div>
                     </div>
                 </div>
                 
@@ -872,46 +904,71 @@
                 return;
             }
             
-            // Calculer l'angle relatif entre le vent et la piste
-            let relativeAnglePiste = windDirection - capPiste;
+            // Calculer les composantes pour la ROUTE MAGNÉTIQUE
+            let relativeAngleRoute = windDirection - routeMagnetique;
+            while (relativeAngleRoute > 180) relativeAngleRoute -= 360;
+            while (relativeAngleRoute < -180) relativeAngleRoute += 360;
             
-            // Normaliser l'angle entre -180° et +180°
+            const relativeAngleRouteRad = relativeAngleRoute * (Math.PI / 180);
+            const headwindRouteComponent = windSpeed * Math.cos(relativeAngleRouteRad);
+            const crosswindRouteComponent = windSpeed * Math.sin(relativeAngleRouteRad);
+            
+            // Calculer les composantes pour le CAP PISTE
+            let relativeAnglePiste = windDirection - capPiste;
             while (relativeAnglePiste > 180) relativeAnglePiste -= 360;
             while (relativeAnglePiste < -180) relativeAnglePiste += 360;
             
-            // Calculer les composantes pour la piste
             const relativeAnglePisteRad = relativeAnglePiste * (Math.PI / 180);
-            const headwindComponent = windSpeed * Math.cos(relativeAnglePisteRad);
-            const crosswindComponent = windSpeed * Math.sin(relativeAnglePisteRad);
+            const headwindPisteComponent = windSpeed * Math.cos(relativeAnglePisteRad);
+            const crosswindPisteComponent = windSpeed * Math.sin(relativeAnglePisteRad);
             
             // Afficher les résultats
-            displayWindResults(headwindComponent, crosswindComponent, windSpeed, windDirection, capPiste, routeMagnetique);
+            displayWindResults(
+                headwindRouteComponent, crosswindRouteComponent, routeMagnetique,
+                headwindPisteComponent, crosswindPisteComponent, capPiste,
+                windSpeed, windDirection
+            );
         }
         
-        function displayWindResults(headwind, crosswind, windSpeed, windDirection, capPiste, routeMagnetique) {
-            // Déterminer si c'est du vent de face ou de dos
-            const isHeadwind = headwind >= 0;
-            const headwindLabel = isHeadwind ? 'Vent de face' : 'Vent de dos';
+        function displayWindResults(headwindRoute, crosswindRoute, routeMag, headwindPiste, crosswindPiste, capPiste, windSpeed, windDirection) {
+            // === RÉSULTATS POUR LA ROUTE MAGNÉTIQUE ===
+            const isHeadwindRoute = headwindRoute >= 0;
+            const headwindRouteLabel = isHeadwindRoute ? 'Vent de face' : 'Vent de dos';
             
-            // Afficher les valeurs
-            document.getElementById('headwindValue').textContent = Math.abs(headwind).toFixed(1) + ' kt';
-            document.getElementById('headwindLabel').textContent = headwindLabel;
-            document.getElementById('crosswindValue').textContent = Math.abs(crosswind).toFixed(1) + ' kt';
+            document.getElementById('headwindRouteValue').textContent = Math.abs(headwindRoute).toFixed(1) + ' kt';
+            document.getElementById('headwindRouteLabel').textContent = headwindRouteLabel;
+            document.getElementById('crosswindRouteValue').textContent = Math.abs(crosswindRoute).toFixed(1) + ' kt';
+            document.getElementById('routeUsed').textContent = Math.round(routeMag) + '°';
+            
+            // Couleur vent de face/dos pour route
+            const headwindRouteElement = document.getElementById('headwindRouteValue');
+            headwindRouteElement.style.color = isHeadwindRoute ? '#27ae60' : '#e74c3c';
+            
+            // === RÉSULTATS POUR LE CAP PISTE ===
+            const isHeadwindPiste = headwindPiste >= 0;
+            const headwindPisteLabel = isHeadwindPiste ? 'Vent de face' : 'Vent de dos';
+            
+            document.getElementById('headwindPisteValue').textContent = Math.abs(headwindPiste).toFixed(1) + ' kt';
+            document.getElementById('headwindPisteLabel').textContent = headwindPisteLabel;
+            document.getElementById('crosswindPisteValue').textContent = Math.abs(crosswindPiste).toFixed(1) + ' kt';
+            document.getElementById('pisteUsed').textContent = Math.round(capPiste) + '°';
+            
+            // Couleur vent de face/dos pour piste
+            const headwindPisteElement = document.getElementById('headwindPisteValue');
+            headwindPisteElement.style.color = isHeadwindPiste ? '#27ae60' : '#e74c3c';
+            
+            // === VENT TOTAL ===
             document.getElementById('windStrength').textContent = windSpeed + ' kt';
-            
-            // Changer la couleur selon le type de vent
-            const headwindElement = document.getElementById('headwindValue');
-            headwindElement.style.color = isHeadwind ? '#27ae60' : '#e74c3c';
             
             // Afficher les résultats
             document.getElementById('windResults').style.display = 'grid';
             document.getElementById('windDiagram').style.display = 'block';
             
-            // Dessiner le diagramme vectoriel
-            drawWindVectors(windSpeed, windDirection, capPiste, headwind, crosswind, routeMagnetique);
+            // Dessiner le diagramme vectoriel avec les deux caps
+            drawWindVectors(windSpeed, windDirection, capPiste, headwindPiste, crosswindPiste, routeMag, headwindRoute, crosswindRoute);
         }
         
-        function drawWindVectors(windSpeed, windDirection, capPiste, headwind, crosswind, routeMagnetique) {
+        function drawWindVectors(windSpeed, windDirection, capPiste, headwindPiste, crosswindPiste, routeMag, headwindRoute, crosswindRoute) {
             const canvas = document.getElementById('windCanvas');
             const ctx = canvas.getContext('2d');
             
@@ -920,32 +977,39 @@
             
             const centerX = canvas.width / 2;
             const centerY = canvas.height / 2;
-            const scale = 3; // Facteur d'échelle pour la visualisation
+            const scale = 2.5; // Facteur d'échelle pour la visualisation
             
-            // Dessiner les axes de référence (piste)
+            // Dessiner le vecteur vent total (bleu épais)
+            const windAngleRad = (windDirection - 90) * (Math.PI / 180);
+            const windEndX = centerX + Math.cos(windAngleRad) * windSpeed * scale;
+            const windEndY = centerY + Math.sin(windAngleRad) * windSpeed * scale;
+            
+            drawArrowVector(ctx, centerX, centerY, windEndX, windEndY, '#2980b9', 4, 'Vent total');
+            
+            // === AXES DE RÉFÉRENCE ===
             ctx.strokeStyle = '#bdc3c7';
             ctx.lineWidth = 2;
-            ctx.setLineDash([5, 5]);
+            ctx.setLineDash([8, 4]);
             
-            // Axe de piste
+            // Axe de piste (gris)
             const pisteAngleRad = (capPiste - 90) * (Math.PI / 180);
-            const pisteEndX = centerX + Math.cos(pisteAngleRad) * 80;
-            const pisteEndY = centerY + Math.sin(pisteAngleRad) * 80;
-            const pisteStartX = centerX - Math.cos(pisteAngleRad) * 80;
-            const pisteStartY = centerY - Math.sin(pisteAngleRad) * 80;
+            const pisteEndX = centerX + Math.cos(pisteAngleRad) * 90;
+            const pisteEndY = centerY + Math.sin(pisteAngleRad) * 90;
+            const pisteStartX = centerX - Math.cos(pisteAngleRad) * 90;
+            const pisteStartY = centerY - Math.sin(pisteAngleRad) * 90;
             
             ctx.beginPath();
             ctx.moveTo(pisteStartX, pisteStartY);
             ctx.lineTo(pisteEndX, pisteEndY);
             ctx.stroke();
             
-            // Axe de route magnétique
+            // Axe de route magnétique (orange)
             ctx.strokeStyle = '#f39c12';
-            const routeAngleRad = (routeMagnetique - 90) * (Math.PI / 180);
-            const routeEndX = centerX + Math.cos(routeAngleRad) * 70;
-            const routeEndY = centerY + Math.sin(routeAngleRad) * 70;
-            const routeStartX = centerX - Math.cos(routeAngleRad) * 70;
-            const routeStartY = centerY - Math.sin(routeAngleRad) * 70;
+            const routeAngleRad = (routeMag - 90) * (Math.PI / 180);
+            const routeEndX = centerX + Math.cos(routeAngleRad) * 80;
+            const routeEndY = centerY + Math.sin(routeAngleRad) * 80;
+            const routeStartX = centerX - Math.cos(routeAngleRad) * 80;
+            const routeStartY = centerY - Math.sin(routeAngleRad) * 80;
             
             ctx.beginPath();
             ctx.moveTo(routeStartX, routeStartY);
@@ -954,34 +1018,38 @@
             
             ctx.setLineDash([]); // Arrêter les pointillés
             
-            // Dessiner le vecteur vent total (bleu)
-            const windAngleRad = (windDirection - 90) * (Math.PI / 180);
-            const windEndX = centerX + Math.cos(windAngleRad) * windSpeed * scale;
-            const windEndY = centerY + Math.sin(windAngleRad) * windSpeed * scale;
+            // === COMPOSANTES PISTE (vert) ===
+            // Vent de face/dos piste
+            const headwindPisteEndX = centerX + Math.cos(pisteAngleRad) * headwindPiste * scale;
+            const headwindPisteEndY = centerY + Math.sin(pisteAngleRad) * headwindPiste * scale;
+            drawArrowVector(ctx, centerX, centerY, headwindPisteEndX, headwindPisteEndY, '#27ae60', 2, 'Face/Dos Piste');
             
-            drawArrowVector(ctx, centerX, centerY, windEndX, windEndY, '#3498db', 3, 'Vent total');
+            // Vent de travers piste
+            const perpPisteAngleRad = pisteAngleRad + Math.PI / 2;
+            const crosswindPisteEndX = centerX + Math.cos(perpPisteAngleRad) * crosswindPiste * scale;
+            const crosswindPisteEndY = centerY + Math.sin(perpPisteAngleRad) * crosswindPiste * scale;
+            drawArrowVector(ctx, centerX, centerY, crosswindPisteEndX, crosswindPisteEndY, '#2ecc71', 2, 'Travers Piste');
             
-            // Dessiner la composante de face/dos (rouge)
-            const headwindEndX = centerX + Math.cos(pisteAngleRad) * headwind * scale;
-            const headwindEndY = centerY + Math.sin(pisteAngleRad) * headwind * scale;
+            // === COMPOSANTES ROUTE (rouge) ===
+            // Vent de face/dos route
+            const headwindRouteEndX = centerX + Math.cos(routeAngleRad) * headwindRoute * scale;
+            const headwindRouteEndY = centerY + Math.sin(routeAngleRad) * headwindRoute * scale;
+            drawArrowVector(ctx, centerX, centerY, headwindRouteEndX, headwindRouteEndY, '#e74c3c', 2, 'Face/Dos Route');
             
-            drawArrowVector(ctx, centerX, centerY, headwindEndX, headwindEndY, '#e74c3c', 2, 'Vent face/dos');
+            // Vent de travers route
+            const perpRouteAngleRad = routeAngleRad + Math.PI / 2;
+            const crosswindRouteEndX = centerX + Math.cos(perpRouteAngleRad) * crosswindRoute * scale;
+            const crosswindRouteEndY = centerY + Math.sin(perpRouteAngleRad) * crosswindRoute * scale;
+            drawArrowVector(ctx, centerX, centerY, crosswindRouteEndX, crosswindRouteEndY, '#c0392b', 2, 'Travers Route');
             
-            // Dessiner la composante de travers (vert)
-            const perpAngleRad = pisteAngleRad + Math.PI / 2;
-            const crosswindEndX = centerX + Math.cos(perpAngleRad) * crosswind * scale;
-            const crosswindEndY = centerY + Math.sin(perpAngleRad) * crosswind * scale;
-            
-            drawArrowVector(ctx, centerX, centerY, crosswindEndX, crosswindEndY, '#27ae60', 2, 'Vent travers');
-            
-            // Ajouter les étiquettes
+            // === ÉTIQUETTES ===
             ctx.fillStyle = '#2c3e50';
-            ctx.font = '11px Arial';
+            ctx.font = '10px Arial';
             ctx.textAlign = 'center';
             
-            // Étiquettes
-            ctx.fillText(`Piste ${Math.round(capPiste)}° | Route ${Math.round(routeMagnetique)}°`, centerX, 15);
-            ctx.fillText(`Vent ${Math.round(windDirection)}° / ${windSpeed}kt`, centerX, canvas.height - 5);
+            ctx.fillText(`Vent ${Math.round(windDirection)}° / ${windSpeed}kt`, centerX, 12);
+            ctx.fillText(`Route ${Math.round(routeMag)}° | Piste ${Math.round(capPiste)}°`, centerX, canvas.height - 8);
+            ctx.fillText(`🔵 Vent total | 🔴 Route | 🟢 Piste`, centerX, canvas.height - 20);
         }
         
         function drawArrowVector(ctx, startX, startY, endX, endY, color, lineWidth, label) {
